@@ -13,6 +13,7 @@ import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
+import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.PrivateChannel;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent;
@@ -78,7 +79,7 @@ public class BanListener extends ListenerAdapter{
 		return Collections.unmodifiableList(handlers);
 	}
 	
-	private void handleEvent(Ban info, GuildMemberJoinEvent event){
+	private void handleBanEvent(Ban info, GuildMemberJoinEvent event){
 		for(GlobalBanHandler handler : this.handlers){
 			if(handler == null){
 				LOG.warn("A null handler was found! Ignoring.");
@@ -93,8 +94,27 @@ public class BanListener extends ListenerAdapter{
 			}
 		}
 	}
+	private void handleJoinEvent(Ban info, GuildMemberJoinEvent event){
+		for(GlobalBanHandler handler : this.handlers){
+			if(handler == null){
+				LOG.warn("A null handler was found! Ignoring.");
+				continue;
+			}
+			try{
+				handler.onBannedUserJoin(new BannedUserJoinEvent(event.getJDA(), info, ksoft, event.getGuild(), event.getUser(), event.getResponseNumber()));
+			}
+			catch(Exception e){
+				LOG.error("A global ban handler threw an uncaught exception!");
+				e.printStackTrace();
+			}
+		}
+	}
 	@Override
 	public void onGuildMemberJoin(GuildMemberJoinEvent event){
+		if(ksoft == null){
+			LOG.warn("No token provided! Please set one with setAPIToken(ksoftToken). Event ignored.");
+			return;
+		}
 		Ban info = null;
 		Guild guild = event.getGuild();
 		Member self = guild.getSelfMember();
@@ -108,8 +128,10 @@ public class BanListener extends ListenerAdapter{
 		}
 		if(info.isBanned() && info.isBanActive()){
 			LOG.info(String.format("Globally banned user %s joined the guild %s (%s)", info.getEffectiveName(), guild.getName(), guild.getId()));
+			this.handleJoinEvent(info, event);
 			try{
 				PrivateChannel channel = event.getUser().openPrivateChannel().complete();
+				Message msg = channel.sendMessage("Getting your global ban info...").complete();
 				User mod = event.getJDA().retrieveUserById(info.getModId()).complete();
 				EmbedBuilder eb = new EmbedBuilder();
 				eb.setColor(Color.RED);
@@ -121,15 +143,15 @@ public class BanListener extends ListenerAdapter{
 				eb.addField("Reason:", info.getReason(), false);
 				eb.addField("Proof:", info.getProof(), true);
 				eb.addField("Is appealable:", (info.isAppealable() ? "Yes" : "No"), true);
-				channel.sendMessage(eb.build()).queue();
+				msg.editMessage(eb.build()).queue();
 			}
 			catch(Exception e){
 				LOG.warn("This user has their DMs disabled! Unable to send them their global ban info.");
 			}
 			if(ban && self.hasPermission(Permission.BAN_MEMBERS) && self.canInteract(event.getMember())){
-				guild.getController().ban(event.getMember(), 7).reason("Banned on KSoft (global ban)").queue();
+				guild.getController().ban(event.getMember(), 7).reason("Banned on KSoft (global ban): " + info.getReason()).queue();
 				LOG.info("Banned user " + info.getEffectiveName());
-				this.handleEvent(info, event);
+				this.handleBanEvent(info, event);
 			}
 		}
 	}
