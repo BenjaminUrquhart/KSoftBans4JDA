@@ -35,4 +35,9 @@ public BanHandler implements GlobalBanHandler{
   }
 }
 ```
+Next, register this listener:
+```java
+banListener.addHandler(new BanHandler());
+```
+
 Both `GlobalBanEvent` and `BannedUserJoinEvent` have accessors for the JDA `GuildMemberJoinEvent` fields
