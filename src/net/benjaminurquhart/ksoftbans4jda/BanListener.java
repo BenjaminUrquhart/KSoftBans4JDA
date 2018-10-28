@@ -60,7 +60,13 @@ public class BanListener extends ListenerAdapter{
 		this.ban = ban;
 		return this;
 	}
-	
+	public boolean getBan(){
+		return ban;
+	}
+	public boolean toggeleBan(){
+		ban = !ban;
+		return ban;
+	}
 	public BanListener addHandlers(List<GlobalBanHandler> handlers){
 		if(this.handlers == null){
 			this.handlers = new ArrayList<GlobalBanHandler>();
@@ -132,14 +138,18 @@ public class BanListener extends ListenerAdapter{
 			try{
 				PrivateChannel channel = event.getUser().openPrivateChannel().complete();
 				Message msg = channel.sendMessage("Getting your global ban info...").complete();
-				User mod = event.getJDA().retrieveUserById(info.getModId()).complete();
+				User mod = null;
+				try{
+					mod = event.getJDA().retrieveUserById(info.getModId()).complete();
+				}
+				catch(Exception e){}
 				EmbedBuilder eb = new EmbedBuilder();
 				eb.setColor(Color.RED);
 				eb.setTitle("Your global ban info");
-				eb.setFooter("Banned", mod.getAvatarUrl());
+				eb.setFooter("Banned on:", (mod == null ? event.getUser().getAvatarUrl() : mod.getAvatarUrl()));
 				eb.setTimestamp(info.getTimestamp());
 				eb.setImage(event.getUser().getAvatarUrl());
-				eb.addField("Banned by:", mod.getName() + "#" + mod.getDiscriminator(), true);
+				eb.addField("Banned by:", (mod == null ? "Unknown moderator" : mod.getName() + "#" + mod.getDiscriminator()), true);
 				eb.addField("Reason:", info.getReason(), false);
 				eb.addField("Proof:", info.getProof(), true);
 				eb.addField("Is appealable:", (info.isAppealable() ? "Yes" : "No"), true);

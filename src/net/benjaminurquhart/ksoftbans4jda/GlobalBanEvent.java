@@ -6,7 +6,7 @@ import net.dv8tion.jda.core.entities.User;
 import net.explodingbush.ksoftapi.KSoftAPI;
 import net.explodingbush.ksoftapi.entities.Ban;
 
-final class GlobalBanEvent {
+public final class GlobalBanEvent {
 	
 	private JDA jda;
 	private Ban banInfo;
