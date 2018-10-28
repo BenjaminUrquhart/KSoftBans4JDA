@@ -40,14 +40,11 @@ public class BanListener extends ListenerAdapter{
 		this.ban = ban;
 	}
 	public BanListener(String ksoftToken, boolean ban, GlobalBanHandler... handlers){
-		this.setAPIToken(ksoftToken);
-		this.addHandlers(handlers);
-		this.ban = ban;
+		this(ksoftToken, ban, Arrays.asList(handlers));
 	}
 	public BanListener(String ksoftToken, boolean ban, List<GlobalBanHandler> handlers){
-		this.setAPIToken(ksoftToken);
+		this(ksoftToken, ban);
 		this.addHandlers(handlers);
-		this.ban = ban;
 	}
 	
 	public BanListener setAPIToken(String token){
@@ -118,7 +115,7 @@ public class BanListener extends ListenerAdapter{
 	@Override
 	public void onGuildMemberJoin(GuildMemberJoinEvent event){
 		if(ksoft == null){
-			LOG.warn("No token provided! Please set one with setAPIToken(ksoftToken). Event ignored.");
+			LOG.warn("Event ignored because you did not set a token! Set a token with setAPIToken(ksoftToken)");
 			return;
 		}
 		Ban info = null;
